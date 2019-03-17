@@ -84,7 +84,6 @@ class GA:
         self.population = sorted(self.population, key=self.sharpe, reverse=True)
         for i in range(1, self.n_generations + 1):
             fittest = self.get_highest_fitness()
-            print("Generation:", i, self.sharpe(fittest))
 
             new_population = self.population[0:self.elite_size]
             for j in range(self.population_size - self.elite_size):
