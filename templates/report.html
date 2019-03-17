@@ -1,0 +1,227 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		
+		<title>Results</title>
+		
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap4-alpha3.min.css') }}">
+		
+		<style>
+			body {
+				background-color: #fafafa;
+				font-size: 16px;
+				line-height: 1.5;
+			}
+			
+			h1,h2,h3,h4,h5,h6 {
+				font-weight: 400;	
+			}
+			
+			#header {
+				border-bottom: 5px solid #37474F;
+				color: #37474F;
+				margin-bottom: 1.5rem;
+				padding: 1rem 0;
+			}
+			
+			#revenue-tag {
+				font-weight: inherit !important;
+				border-radius: 0px !important;
+			}
+			
+			.card {
+				border: 0rem;
+				border-radius: 0rem;
+			}
+			
+			.card-header {
+				background-color: #37474F;
+				border-radius: 0 !important;
+				color:	white;
+				margin-bottom: 0;
+				padding:	1rem;
+			}
+			
+			.card-block {
+				border: 1px solid #cccccc;	
+			}
+			
+			.shadow {
+				box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.14),
+										0 1px 18px 0 rgba(0, 0, 0, 0.12),
+										0 3px 5px -1px rgba(0, 0, 0, 0.2);
+			}
+			
+			#revenue-column-chart, #products-revenue-pie-chart, #orders-spline-chart {
+				height: 300px;
+				width: 100%;
+			}			
+		</style>
+		
+		<!-- Scripts -->
+		<script src="{{ url_for('static', filename='jquery/jquery-3.1.0.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='tether/tether.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='bootstrap/bootstrap4-alpha3.min.js') }}"></script>
+		<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	
+		<script>
+			$(function () {
+				var totalRevenue = {{ returns.items()|sum(attribute="1")|round }};
+				
+				// CanvasJS column chart to show revenue from Jan 2015 - Dec 2015
+				var revenueColumnChart = new CanvasJS.Chart("revenue-column-chart", {
+					animationEnabled: true,
+					backgroundColor: "transparent",
+					theme: "theme2",
+					axisY: {
+						labelFontSize: 14,
+						prefix: "$"
+					},
+					toolTip: {
+						borderThickness: 0,
+						cornerRadius: 0
+					},
+					data: [
+						{
+							type: "column",
+							yValueFormatString: "$###,###.##",
+							dataPoints: [
+							{% for key in returns %}
+								{ label: "{{ key }}", y: {{ returns[key] }} },
+							{% endfor %}
+							]
+						}
+					]
+				});
+				
+				revenueColumnChart.render();
+				
+				//CanvasJS pie chart to show product wise annual revenue for 2015
+				var productsRevenuePieChart = new CanvasJS.Chart("products-revenue-pie-chart", {
+					animationEnabled: true,
+					theme: "theme2",
+					legend: {
+						fontSize: 14
+					},
+					toolTip: {
+						borderThickness: 0,
+						content: "<span style='\"'color: {color};'\"'>{name}</span>: ${y} (#percent%)",
+						cornerRadius: 0
+					},
+					data: [
+						{       
+							indexLabelFontColor: "#676464",
+							indexLabelFontSize: 14,
+							legendMarkerType: "square",
+							legendText: "{indexLabel}",
+							showInLegend: true,
+							startAngle:  90,
+							type: "pie",
+							dataPoints: [
+							{% for stock in portfolio %}
+									{ y: {{ portfolio[stock] }}, name: "{{ stock }}", exploded: true, indexLabel: "{{ stock }} - {{ portfolio[stock] }}%", legendText: "{{ stock }}" },
+							{% endfor %}
+							]
+						}
+					]
+				});
+				
+				productsRevenuePieChart.render();
+				
+				//CanvasJS spline chart to show orders from Jan 2015 to Dec 2015
+				var ordersSplineChart = new CanvasJS.Chart("orders-spline-chart", {
+					animationEnabled: true,
+					backgroundColor: "transparent",
+					theme: "theme2",
+					toolTip: {
+						borderThickness: 0,
+						cornerRadius: 0,
+						shared: true
+					},
+					axisY: {
+						gridThickness: 0,
+						labelFontSize: 14,
+						lineThickness: 2
+					},
+					axisX:{
+						gridThickness: 0,
+						tickLength: 0,
+						lineThickness: 0,
+						labelFormatter: function(){
+							return "";
+						}
+					},
+					data: [
+						{% for stock in performance %}
+						{
+							type:"spline",
+							axisYType: "secondary",
+							name: "{{ stock }}",
+							showInLegend: true,
+							markerSize: 0,
+							{% if stock == "ga" %}
+							color: "#000000",
+							{% endif %}
+							yValueFormatString: "$#,###k",
+							dataPoints: [
+								{% for i in range(performance[stock]|length) %}
+								{ x: {{ i }}, y: {{ performance[stock][i] }} },
+								{% endfor %}
+							]
+						},
+						{% endfor %}
+					]
+				});
+
+				ordersSplineChart.render();
+				
+			});
+		</script>
+		
+	</head>
+	<body>
+		<div class="container">
+			<h2 id="header">
+				<strong>Portfolio Optimization</strong>
+				<small class="text-muted">Feb 2018 - Feb 2019</small>
+			</h2>
+			
+			<div class="row m-b-1">
+				<div class="col-xs-12">
+					<div class="card shadow">
+						<h4 class="card-header">Backtested Returns <span class="tag tag-success" id="revenue-tag">$ {{ returns.items()|sum(attribute="1")|round }}</span></h4>
+						<div class="card-block">
+							<div id="revenue-column-chart"></div>
+						</div>
+					</div>
+				</div>
+			</div> <!-- row -->
+
+			<div class="row m-b-1">
+				<div class="col-xs-12">
+					<div class="card shadow">
+						<h4 class="card-header">Optimal Portfolio</h4>
+						<div class="card-block">
+							<div id="products-revenue-pie-chart"></div>
+						</div>
+					</div>
+				</div>
+
+			<div class="row m-b-1">
+				<div class="col-xs-12">
+					<div class="card shadow">
+						<h4 class="card-header">Portfolio Growth</h4>
+						<div class="card-block">
+							<div id="orders-spline-chart"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			</div> <!-- row -->
+		</div> <!-- container -->
+	</body>
+</html>
