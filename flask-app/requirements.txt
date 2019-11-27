@@ -10,6 +10,6 @@ numpy==1.16.2
 pprint==0.1
 PyYAML==5.1
 requests==2.21.0
-urllib3==1.24.1
+urllib3==1.24.2
 Werkzeug==0.14.1
 yahoo-finance-api2==0.0.6
